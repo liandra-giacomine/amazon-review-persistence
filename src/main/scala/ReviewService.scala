@@ -28,7 +28,7 @@ object ReviewService {
       .evalMap(review => IO(ReviewDocument(review.get)))
       //     .filter(x => x.isRight)
       .evalMap(reviewDocument =>
-        IO(PersistenceService.insertReview(reviewDocument))
+        PersistenceService.insertReview(reviewDocument)
       )
       .compile
       .drain
