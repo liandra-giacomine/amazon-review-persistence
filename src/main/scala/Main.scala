@@ -16,7 +16,7 @@ object Main extends IOApp.Simple {
     .unsafeRunSync()(
       cats.effect.unsafe.IORuntime.global
     )
-    .length // TODO: Need to handle when path is not passed
+  // TODO: Need to handle when path is not passed
 
   println("LENGTH OF LIST OF REVIEWS!!!!!!!!: " + len)
 //  implicit val runTimeGlobal = cats.effect.unsafe.IORuntime.global

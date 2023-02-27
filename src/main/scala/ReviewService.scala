@@ -27,11 +27,11 @@ object ReviewService {
       .filter(reviewOpt => reviewOpt.isDefined)
       .evalMap(review => IO(ReviewDocument(review.get)))
       //     .filter(x => x.isRight)
-//      .evalMap(review =>
-//        IO(PersistenceService.insertReview(review.toOption.get))
-//      )
+      .evalMap(reviewDocument =>
+        IO(PersistenceService.insertReview(reviewDocument))
+      )
       .compile
-      .toList
+      .drain
 
 //      .flatMap { json =>
 //        json

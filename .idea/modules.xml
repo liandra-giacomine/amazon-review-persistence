@@ -2,9 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Documents.amazon-review-persistance.iml" filepath="$PROJECT_DIR$/.idea/modules/Documents.amazon-review-persistance.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/amazon-review-persistance.iml" filepath="$PROJECT_DIR$/.idea/amazon-review-persistance.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/amazon-review-persistance-build.iml" filepath="$PROJECT_DIR$/.idea/modules/amazon-review-persistance-build.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/development.amazon-review-persistance.iml" filepath="$PROJECT_DIR$/.idea/modules/development.amazon-review-persistance.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/project.amazon-review-persistance-build.iml" filepath="$PROJECT_DIR$/.idea/modules/project.amazon-review-persistance-build.iml" />
     </modules>
   </component>
 </project>
