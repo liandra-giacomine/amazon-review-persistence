@@ -38,12 +38,13 @@ object PersistenceService {
     IO.fromFuture(IO(collection.deleteMany(Document()).toFutureOption()))
       .map(_ => ())
 
-  def insertReview(r: ReviewDocument): IO[Unit] = {
+  def insertReview(reviews: List[ReviewDocument]): IO[Unit] = {
+    println("I AM THIS BIG!: " + reviews.length)
     IO.fromFuture(
       IO(
         collection
-          .insertOne(r)
-          .toFuture()
+          .insertMany(reviews)
+          .toFutureOption()
       )
     ).map(_ => ())
   }
