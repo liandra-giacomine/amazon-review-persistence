@@ -43,7 +43,7 @@ object PersistenceService {
       IO(
         collection
           .insertOne(r)
-          .toFutureOption()
+          .toFuture()
       )
     ).map(_ => ())
   }
