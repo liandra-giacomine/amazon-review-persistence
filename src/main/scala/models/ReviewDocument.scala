@@ -1,7 +1,10 @@
 package models
 
+import org.mongodb.scala.bson.ObjectId
+
 case class ReviewDocument(
-    _id: String,
+    _id: ObjectId,
+    asin: String,
     helpful: List[Int],
     overall: String,
     reviewText: String,
@@ -14,6 +17,7 @@ case class ReviewDocument(
 object ReviewDocument {
   def apply(r: Review): ReviewDocument = {
     ReviewDocument(
+      new ObjectId(),
       r.asin,
       List(r.helpful._1, r.helpful._2),
       r.overall.toString(),

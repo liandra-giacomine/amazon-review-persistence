@@ -35,13 +35,17 @@ object PersistenceService {
     database.getCollection("reviews_collection")
 
   def cleanCollection(): IO[Unit] =
-    IO(collection.deleteMany(Document()).toFutureOption()).map(_ => ())
+    IO.fromFuture(IO(collection.deleteMany(Document()).toFutureOption()))
+      .map(_ => ())
 
   def insertReview(r: ReviewDocument): IO[Unit] = {
-    IO(
-      collection
-        .insertOne(r)
-    )
+    IO.fromFuture(
+      IO(
+        collection
+          .insertOne(r)
+          .toFutureOption()
+      )
+    ).map(_ => ())
   }
 
   def getBestReviews(

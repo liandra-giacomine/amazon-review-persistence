@@ -41,10 +41,5 @@ object ReviewService {
 //      .compile
     // TODO: handle error
 
-//    PersistenceService
-//      .insertReview(
-//        Review("2", List(1, 2), "4.5", "a", "b", "c", "d", 1234567898)
-//      )
-//      .unsafeRunSync()
   }
 }
