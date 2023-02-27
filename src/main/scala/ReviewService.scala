@@ -25,10 +25,8 @@ object ReviewService {
       .filter(jsonEither => jsonEither.isRight)
       .evalMap(json => IO(json.toOption.get.as[Review].toOption))
       .filter(reviewOpt => reviewOpt.isDefined)
-      .evalMap(review => IO(ReviewDocument(review.get)))
-      //     .filter(x => x.isRight)
-      .evalMap(reviewDocument =>
-        PersistenceService.insertReview(reviewDocument)
+      .evalMap(review =>
+        PersistenceService.insertReview(ReviewDocument(review.get))
       )
       .compile
       .drain
