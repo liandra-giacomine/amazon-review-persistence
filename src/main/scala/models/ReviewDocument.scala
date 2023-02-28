@@ -1,9 +1,14 @@
 package models
 
+import org.bson.codecs.pojo.annotations.BsonId
+import org.mongodb.scala.bson.ObjectId
+import org.mongodb.scala.bson.annotations.BsonProperty
+
 case class ReviewDocument(
-    _id: String,
+    _id: ObjectId,
+    asin: String,
     helpful: List[Int],
-    overall: String,
+    overall: Double,
     reviewText: String,
     reviewerID: String,
     reviewerName: String,
@@ -14,9 +19,10 @@ case class ReviewDocument(
 object ReviewDocument {
   def apply(r: Review): ReviewDocument = {
     ReviewDocument(
+      new ObjectId(),
       r.asin,
       List(r.helpful._1, r.helpful._2),
-      r.overall.toString(),
+      r.overall,
       r.reviewText,
       r.reviewerID,
       r.reviewerName,

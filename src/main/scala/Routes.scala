@@ -17,7 +17,7 @@ import org.http4s.implicits._
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.parser._
-import models.{Review, ReviewRating}
+import models.{Review}
 import concurrent.duration.DurationInt
 
 import java.nio.file.Paths
@@ -32,17 +32,16 @@ object Routes {
     val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] { case GET -> Root / "amazon" / "best-review" =>
-      Ok("hi")
-//      val runtime = cats.effect.unsafe.IORuntime.global
-//      (for {
-//        reviews <- PersistenceService
-//          .getBestReviews(
-//            1262304000,
-//            1609372800,
-//            2,
-//            2
-//          )
-//      } yield Ok(reviews.get.asJson)).unsafeRunSync()(runtime)
+      val runtime = cats.effect.unsafe.IORuntime.global
+      (for {
+        reviews <- ReviewService
+          .getBestReviews(
+            1262304000,
+            1609372800,
+            2,
+            2
+          )
+      } yield Ok(reviews.asJson)).unsafeRunSync()(runtime)
     }
   }
 }
