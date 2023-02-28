@@ -91,6 +91,10 @@ object ReviewService {
       minReviews: Int,
       limit: Int
   ): IO[Seq[ReviewRating]] = {
+    def sumAsBigDecimal(overallList: List[Double]): BigDecimal = {
+      val bigDecimalList = overallList.map(o => BigDecimal(o))
+      bigDecimalList.sum / bigDecimalList.length
+    }
     IO {
       documents
         .map(d => decode[ProductRatings](d.toJson()))
@@ -98,9 +102,10 @@ object ReviewService {
         .map { case Right(p) =>
           ReviewRating(
             p._id,
-            BigDecimal(p.overallList.sum / p.overallList.length)
+            sumAsBigDecimal(p.overallList)
           )
         }
+        .sortBy(r => r.averageRating)(Ordering.BigDecimal.reverse)
         .take(limit)
     }
   }
