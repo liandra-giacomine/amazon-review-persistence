@@ -6,7 +6,7 @@ import munit.CatsEffectSuite
 
 import java.nio.file.Paths
 
-class ReviewServiceSpec extends CatsEffectSuite:
+class ReviewServiceSpec extends CatsEffectSuite {
 
   test("GET /amazon/best-review returns status code 200") {
     assertIO(
@@ -29,3 +29,4 @@ class ReviewServiceSpec extends CatsEffectSuite:
       )
     )
   }
+}

@@ -2,11 +2,11 @@ package amazonreviewpersistance
 
 import cats.effect.IO
 import models.Review
-import org.http4s.*
-import org.http4s.implicits.*
+import org.http4s._
+import org.http4s.implicits._
 import munit.CatsEffectSuite
 
-class RoutesSpec extends CatsEffectSuite:
+class RoutesSpec extends CatsEffectSuite {
 
   test("GET /amazon/best-review returns status code 200") {
     assertIO(getBestReview.map(_.status), Status.Ok)
@@ -28,3 +28,4 @@ class RoutesSpec extends CatsEffectSuite:
       .run(
         Request(method = Method.GET, uri = uri"/amazon/best-review")
       )
+}
