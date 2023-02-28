@@ -34,19 +34,14 @@ object Routes {
     HttpRoutes.of[F] { case GET -> Root / "amazon" / "best-review" =>
       val runtime = cats.effect.unsafe.IORuntime.global
       (for {
-        reviews <- PersistenceService
+        reviews <- ReviewService
           .getBestReviews(
             1262304000,
             1609372800,
             2,
             2
           )
-      } yield Ok(
-        reviews.head.toJson()
-//          .map(r =>
-//            ReviewRating(r.getString("_id"), r.getDouble("averageRating"))
-//          )
-      )).unsafeRunSync()(runtime)
+      } yield Ok(reviews.asJson)).unsafeRunSync()(runtime)
     }
   }
 }

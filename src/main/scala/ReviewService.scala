@@ -4,7 +4,8 @@ import fs2.io.file.{Files, Path}
 import fs2.{Pipe, Stream, text}
 import cats.effect.IO
 import io.circe.parser._
-import models.{Review, ReviewDocument}
+import models.{Review, ReviewDocument, ReviewRating, ProductRatings}
+import org.mongodb.scala.bson.collection.immutable.Document
 
 import scala.annotation.tailrec
 
@@ -66,4 +67,42 @@ object ReviewService {
   def insertReviewsFromFile() = {
     IO(insertReviewsFromFileRange(0, ReviewFile.size))
   }
+
+  def getBestReviews(
+      fromTimeStamp: Long,
+      toTimeStamp: Long,
+      minReviews: Int,
+      limit: Int
+  ): IO[Seq[ReviewRating]] = {
+    for {
+      reviews <- PersistenceService
+        .getBestReviews(
+          fromTimeStamp,
+          toTimeStamp,
+          minReviews,
+          limit
+        )
+      reviewRatings <- convertDocumentToReviewRating(reviews, minReviews, limit)
+    } yield reviewRatings
+  }
+
+  private def convertDocumentToReviewRating(
+      documents: Seq[Document],
+      minReviews: Int,
+      limit: Int
+  ): IO[Seq[ReviewRating]] = {
+    IO {
+      documents
+        .map(d => decode[ProductRatings](d.toJson()))
+        .filter(p => p.toOption.get.overallList.length >= minReviews)
+        .map { case Right(p) =>
+          ReviewRating(
+            p._id,
+            BigDecimal(p.overallList.sum / p.overallList.length)
+          )
+        }
+        .take(limit)
+    }
+  }
+
 }

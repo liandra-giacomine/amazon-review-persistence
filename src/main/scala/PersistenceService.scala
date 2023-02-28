@@ -1,7 +1,7 @@
 package amazonreviewpersistance
 
 import cats.effect.IO
-import models.{BestReviewResponse, Review, ReviewDocument}
+import models.{Review, ReviewDocument}
 import org.mongodb.scala.{Document, MongoClient, MongoCollection, MongoDatabase}
 
 import java.util.concurrent.Executors
@@ -58,8 +58,6 @@ object PersistenceService {
     ).map(_ => ())
   }
 
-  case class StringId(_id: String)
-
   def getBestReviews(
       fromTimeStamp: Long,
       toTimeStamp: Long,
@@ -75,8 +73,7 @@ object PersistenceService {
               filter(lte("unixReviewTime", toTimeStamp)),
               group(
                 "$asin",
-                Accumulators.push("overalls", "$overall")
-//                Accumulators.addToSet("$overall")
+                Accumulators.push("overallList", "$overall")
               )
 //              project(
 //                fields(
