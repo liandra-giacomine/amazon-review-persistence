@@ -2,9 +2,11 @@ package amazonreviewpersistance
 
 import fs2.io.file.{Files, Path}
 import fs2.{Pipe, Stream, text}
-import cats.effect.{IO}
+import cats.effect.IO
 import io.circe.parser._
 import models.{Review, ReviewDocument}
+
+import scala.annotation.tailrec
 
 object ReviewService {
 
@@ -34,6 +36,7 @@ object ReviewService {
         PersistenceService.insertReview(reviewList)
       }
 
+  @tailrec
   private def insertReviewsFromFileRange(
       start: Long,
       remainingBytes: Long,

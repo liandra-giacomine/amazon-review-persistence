@@ -1,18 +1,28 @@
 package amazonreviewpersistance
 
-import cats.data.EitherT
 import cats.effect.IO
-import models.{Review, ReviewDocument}
-import models.errors.MongoError
+import models.{BestReviewResponse, Review, ReviewDocument}
 import org.mongodb.scala.{Document, MongoClient, MongoCollection, MongoDatabase}
 
 import java.util.concurrent.Executors
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import org.mongodb.scala.bson.codecs.Macros._
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.bson.codecs.configuration.CodecRegistries.{
   fromProviders,
   fromRegistries
+}
+import org.mongodb.scala.bson.{BsonDocument, BsonObjectId}
+import org.mongodb.scala.model.Accumulators
+import org.mongodb.scala.model.Accumulators.avg
+import org.mongodb.scala.model.Aggregates.{count, filter, group, project}
+import org.mongodb.scala.model.Filters.{equal, gte, lte}
+import org.mongodb.scala.model.Projections.{
+  computed,
+  exclude,
+  excludeId,
+  fields,
+  include
 }
 
 object PersistenceService {
@@ -35,19 +45,20 @@ object PersistenceService {
     database.getCollection("reviews_collection")
 
   def cleanCollection(): IO[Unit] =
-    IO.fromFuture(IO(collection.deleteMany(Document()).toFutureOption()))
+    IO.fromFuture(IO(collection.deleteMany(Document()).toFuture()))
       .map(_ => ())
 
   def insertReview(reviews: List[ReviewDocument]): IO[Unit] = {
-    println("I AM THIS BIG!: " + reviews.length)
     IO.fromFuture(
       IO(
         collection
           .insertMany(reviews)
-          .toFutureOption()
+          .toFuture()
       )
     ).map(_ => ())
   }
+
+  case class StringId(_id: String)
 
   def getBestReviews(
       fromTimeStamp: Long,
@@ -55,7 +66,42 @@ object PersistenceService {
       minReviews: Int,
       limit: Int
   ) = {
-    IO.fromFuture(IO(collection.find().first().toFutureOption()))
+    IO.fromFuture(
+      IO(
+        collection
+          .aggregate[Document](
+            List(
+              filter(gte("unixReviewTime", fromTimeStamp)),
+              filter(lte("unixReviewTime", toTimeStamp)),
+              group(
+                "$asin",
+                Accumulators.push("overalls", "$overall")
+//                Accumulators.addToSet("$overall")
+              )
+//              project(
+//                fields(
+//                  include("_id", "overallSum")
+//                )
+//              )
+            )
+          )
+          .toFuture()
+          .recover { case e =>
+            println("Mongo Error: " + e.getMessage)
+            Seq.empty[Document]
+          }
+      )
+    )
   }
 
+  // ase class ReviewDocument(
+  //    _id: ObjectId,
+  //    asin: String,
+  //    helpful: List[Int],
+  //    overall: Double,
+  //    reviewText: String,
+  //    reviewerID: String,
+  //    reviewerName: String,
+  //    summary: String,
+  //    unixReviewTime: Long
 }
