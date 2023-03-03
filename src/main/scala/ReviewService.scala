@@ -1,10 +1,11 @@
 package amazonreviewpersistance
 
+import cats.data.EitherT
 import fs2.io.file.{Files, Path}
 import fs2.{Pipe, Stream, text}
 import cats.effect.IO
 import io.circe.parser._
-import models.{Review, ReviewDocument, ReviewRating, ProductRatings}
+import models.{ProductRatings, Review, ReviewDocument, ReviewRating}
 import org.mongodb.scala.bson.collection.immutable.Document
 
 import scala.annotation.tailrec
@@ -95,6 +96,7 @@ object ReviewService {
       val bigDecimalList = overallList.map(o => BigDecimal(o))
       bigDecimalList.sum / bigDecimalList.length
     }
+
     IO {
       documents
         .map(d => decode[ProductRatings](d.toJson()))
