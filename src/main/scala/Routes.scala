@@ -38,7 +38,6 @@ object Routes {
       import org.http4s.dsl.io._
       implicit val runtime = cats.effect.unsafe.IORuntime.global
 
-      println("YAAAAAAAAASSSS")
       req
         .as[BestReviewRequest]
         .attempt
