@@ -1,10 +1,10 @@
 package amazonreviewpersistance
 
-import cats.data.EitherT
 import fs2.io.file.{Files, Path}
 import fs2.{Pipe, Stream, text}
 import cats.effect.IO
 import io.circe.parser._
+import models.requests.BestReviewRequest
 import models.{ProductRatings, Review, ReviewDocument, ReviewRating}
 import org.mongodb.scala.bson.collection.immutable.Document
 
@@ -13,8 +13,6 @@ import scala.annotation.tailrec
 object ReviewService {
 
   implicit val runtime = cats.effect.unsafe.IORuntime.global
-
-  private lazy val fs2Path = Path.fromNioPath(ReviewFile.path)
 
   private val convertToReviewObjPipe: Pipe[IO, Byte, ReviewDocument] = src =>
     src
@@ -42,6 +40,7 @@ object ReviewService {
   private def insertReviewsFromFileRange(
       start: Long,
       remainingBytes: Long,
+      fs2Path: Path,
       chunkSize: Int = 1000 * 1024
   ): Unit = {
     if (remainingBytes <= 0) ()
@@ -57,34 +56,35 @@ object ReviewService {
         .compile
         .drain
         .unsafeRunSync()
-      // TODO: handle error
 
       val remaining = remainingBytes - chunkSize
 
-      insertReviewsFromFileRange(end, remaining)
+      insertReviewsFromFileRange(end, remaining, fs2Path)
     }
   }
 
-  def insertReviewsFromFile() = {
-    IO(insertReviewsFromFileRange(0, ReviewFile.size))
+  def insertReviewsFromFile(filepath: String) = {
+    val path    = java.nio.file.Paths.get(filepath)
+    val fs2Path = Path.fromNioPath(path)
+    val size    = java.nio.file.Files.size(path)
+    IO(insertReviewsFromFileRange(0, size, fs2Path))
   }
 
   def getBestReviews(
-      fromTimeStamp: Long,
-      toTimeStamp: Long,
-      minReviews: Int,
-      limit: Int
-  ): IO[Seq[ReviewRating]] = {
-    for {
+      bestReviewRequest: BestReviewRequest
+  ): Either[Throwable, Seq[ReviewRating]] = {
+    (for {
       reviews <- PersistenceService
         .getBestReviews(
-          fromTimeStamp,
-          toTimeStamp,
-          minReviews,
-          limit
+          bestReviewRequest.start,
+          bestReviewRequest.end
         )
-      reviewRatings <- convertDocumentToReviewRating(reviews, minReviews, limit)
-    } yield reviewRatings
+      reviewRatings <- convertDocumentToReviewRating(
+        reviews,
+        bestReviewRequest.min,
+        bestReviewRequest.limit
+      )
+    } yield reviewRatings).attempt.unsafeRunSync()
   }
 
   private def convertDocumentToReviewRating(

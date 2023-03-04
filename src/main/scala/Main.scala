@@ -1,7 +1,8 @@
 package amazonreviewpersistance
 
+import cats.effect.unsafe.IORuntime
 import cats.effect.{IO, IOApp}
-import models.Review
+import fs2.io.file.Path
 
 object Main extends IOApp.Simple {
 
@@ -11,12 +12,13 @@ object Main extends IOApp.Simple {
     .cleanCollection()
     .unsafeRunSync()(cats.effect.unsafe.IORuntime.global)
 
-  ReviewService
-    .insertReviewsFromFile()
-    .unsafeRunSync()(
-      cats.effect.unsafe.IORuntime.global
-    )
-  // TODO: Need to handle when path is not passed
+  (ReviewFile.inputValue match {
+    case Some(f) =>
+      ReviewService.insertReviewsFromFile(f)
+    case None =>
+      ReviewService
+        .insertReviewsFromFile("src/main/scala/resources/reviews.json")
+  }).unsafeRunSync()(cats.effect.unsafe.IORuntime.global)
 
   val run = Server.run
 }

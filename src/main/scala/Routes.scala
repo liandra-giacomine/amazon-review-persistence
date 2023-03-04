@@ -34,7 +34,7 @@ object Routes {
     jsonOf[IO, BestReviewRequest]
 
   val reviewRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case req @ POST -> Root / "amazon" / "best-review" =>
+    case req @ POST -> Root / "reviews" / "best" =>
       import org.http4s.dsl.io._
       implicit val runtime = cats.effect.unsafe.IORuntime.global
 
@@ -44,18 +44,12 @@ object Routes {
         .map {
           case Left(thr) => BadRequest(thr.getMessage)
           case Right(bestReviewReq) =>
-            Ok(bestReviewReq.minReviews.asJson)
+            ReviewService
+              .getBestReviews(bestReviewReq) match {
+              case Left(e)  => InternalServerError()
+              case Right(b) => Ok(b.asJson)
+            }
         }
         .unsafeRunSync()
-
-//      (for {
-//        reviews <- ReviewService
-//          .getBestReviews(
-//            1262304000,
-//            1609372800,
-//            2,
-//            2
-//          )
-//      } yield Ok(reviews.asJson)).unsafeRunSync()(runtime)
   }
 }
