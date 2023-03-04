@@ -34,7 +34,7 @@ object Routes {
     jsonOf[IO, BestReviewRequest]
 
   val reviewRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case req @ POST -> Root / "amazon" / "best-review" =>
+    case req @ POST -> Root / "reviews" / "best" =>
       import org.http4s.dsl.io._
       implicit val runtime = cats.effect.unsafe.IORuntime.global
 
