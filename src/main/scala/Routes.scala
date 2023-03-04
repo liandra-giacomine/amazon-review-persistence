@@ -44,18 +44,12 @@ object Routes {
         .map {
           case Left(thr) => BadRequest(thr.getMessage)
           case Right(bestReviewReq) =>
-            Ok(bestReviewReq.minReviews.asJson)
+            ReviewService
+              .getBestReviews(bestReviewReq) match {
+              case Left(e)  => InternalServerError()
+              case Right(b) => Ok(b.asJson)
+            }
         }
         .unsafeRunSync()
-
-//      (for {
-//        reviews <- ReviewService
-//          .getBestReviews(
-//            1262304000,
-//            1609372800,
-//            2,
-//            2
-//          )
-//      } yield Ok(reviews.asJson)).unsafeRunSync()(runtime)
   }
 }

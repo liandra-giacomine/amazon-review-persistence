@@ -50,18 +50,16 @@ object PersistenceService {
   }
 
   def getBestReviews(
-      fromTimeStamp: Long,
-      toTimeStamp: Long,
-      minReviews: Int,
-      limit: Int
+      startTime: Long,
+      endTime: Long
   ) = {
     IO.fromFuture(
       IO(
         collection
           .aggregate[Document](
             List(
-              filter(gte("unixReviewTime", fromTimeStamp)),
-              filter(lte("unixReviewTime", toTimeStamp)),
+              filter(gte("unixReviewTime", startTime)),
+              filter(lte("unixReviewTime", endTime)),
               group(
                 "$asin",
                 Accumulators.push("overallList", "$overall")

@@ -5,6 +5,7 @@ import fs2.io.file.{Files, Path}
 import fs2.{Pipe, Stream, text}
 import cats.effect.IO
 import io.circe.parser._
+import models.requests.BestReviewRequest
 import models.{ProductRatings, Review, ReviewDocument, ReviewRating}
 import org.mongodb.scala.bson.collection.immutable.Document
 
@@ -70,21 +71,20 @@ object ReviewService {
   }
 
   def getBestReviews(
-      fromTimeStamp: Long,
-      toTimeStamp: Long,
-      minReviews: Int,
-      limit: Int
-  ): IO[Seq[ReviewRating]] = {
-    for {
+      bestReviewRequest: BestReviewRequest
+  ): Either[Throwable, Seq[ReviewRating]] = {
+    (for {
       reviews <- PersistenceService
         .getBestReviews(
-          fromTimeStamp,
-          toTimeStamp,
-          minReviews,
-          limit
+          bestReviewRequest.start,
+          bestReviewRequest.end
         )
-      reviewRatings <- convertDocumentToReviewRating(reviews, minReviews, limit)
-    } yield reviewRatings
+      reviewRatings <- convertDocumentToReviewRating(
+        reviews,
+        bestReviewRequest.min,
+        bestReviewRequest.limit
+      )
+    } yield reviewRatings).attempt.unsafeRunSync()
   }
 
   private def convertDocumentToReviewRating(
