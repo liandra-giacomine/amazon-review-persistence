@@ -2,7 +2,6 @@ package models
 
 import io.circe._
 import io.circe.generic.semiauto._
-import io.circe.syntax.EncoderOps
 
 final case class Review(
     asin: String,

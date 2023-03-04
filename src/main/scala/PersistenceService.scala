@@ -1,29 +1,20 @@
 package amazonreviewpersistance
 
 import cats.effect.IO
-import models.{Review, ReviewDocument}
+import models.{ReviewDocument}
 import org.mongodb.scala.{Document, MongoClient, MongoCollection, MongoDatabase}
 
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
-import org.mongodb.scala.bson.codecs.Macros._
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.bson.codecs.configuration.CodecRegistries.{
-  fromProviders,
-  fromRegistries
+  fromRegistries,
+  fromProviders
 }
-import org.mongodb.scala.bson.{BsonDocument, BsonObjectId}
 import org.mongodb.scala.model.Accumulators
-import org.mongodb.scala.model.Accumulators.avg
-import org.mongodb.scala.model.Aggregates.{count, filter, group, project}
-import org.mongodb.scala.model.Filters.{equal, gte, lte}
-import org.mongodb.scala.model.Projections.{
-  computed,
-  exclude,
-  excludeId,
-  fields,
-  include
-}
+import org.mongodb.scala.model.Aggregates.{filter, group}
+import org.mongodb.scala.model.Filters.{gte, lte}
+import org.mongodb.scala.bson.codecs.Macros._
 
 object PersistenceService {
 
@@ -75,11 +66,6 @@ object PersistenceService {
                 "$asin",
                 Accumulators.push("overallList", "$overall")
               )
-//              project(
-//                fields(
-//                  include("_id", "overallSum")
-//                )
-//              )
             )
           )
           .toFuture()
@@ -90,15 +76,4 @@ object PersistenceService {
       )
     )
   }
-
-  // ase class ReviewDocument(
-  //    _id: ObjectId,
-  //    asin: String,
-  //    helpful: List[Int],
-  //    overall: Double,
-  //    reviewText: String,
-  //    reviewerID: String,
-  //    reviewerName: String,
-  //    summary: String,
-  //    unixReviewTime: Long
 }

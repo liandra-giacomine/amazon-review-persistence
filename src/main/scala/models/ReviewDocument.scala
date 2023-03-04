@@ -1,8 +1,6 @@
 package models
 
-import org.bson.codecs.pojo.annotations.BsonId
 import org.mongodb.scala.bson.ObjectId
-import org.mongodb.scala.bson.annotations.BsonProperty
 
 case class ReviewDocument(
     _id: ObjectId,

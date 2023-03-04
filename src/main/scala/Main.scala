@@ -18,5 +18,5 @@ object Main extends IOApp.Simple {
     )
   // TODO: Need to handle when path is not passed
 
-  val run = Server.run[IO]
+  val run = Server.run
 }

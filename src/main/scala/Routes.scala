@@ -17,9 +17,10 @@ import org.http4s.implicits._
 import io.circe.syntax._
 import org.http4s.circe._
 import io.circe.parser._
-import models.{Review}
-import concurrent.duration.DurationInt
+import models.Review
+import models.requests.BestReviewRequest
 
+import concurrent.duration.DurationInt
 import java.nio.file.Paths
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
@@ -28,20 +29,33 @@ object Routes {
 
   // TODO: Throw a bad request if toTimeStamp is more than fromTimeStamp?
   // TODO: Handle errors coming from the service, maybe return EitherT[IO, Throwable, List[ReviewRating]]
-  def reviewRoutes[F[_]: Sync]: HttpRoutes[F] = {
-    val dsl = new Http4sDsl[F] {}
-    import dsl._
-    HttpRoutes.of[F] { case GET -> Root / "amazon" / "best-review" =>
-      val runtime = cats.effect.unsafe.IORuntime.global
-      (for {
-        reviews <- ReviewService
-          .getBestReviews(
-            1262304000,
-            1609372800,
-            2,
-            2
-          )
-      } yield Ok(reviews.asJson)).unsafeRunSync()(runtime)
-    }
+
+  implicit val decoder: EntityDecoder[IO, BestReviewRequest] =
+    jsonOf[IO, BestReviewRequest]
+
+  val reviewRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case req @ POST -> Root / "amazon" / "best-review" =>
+      import org.http4s.dsl.io._
+      implicit val runtime = cats.effect.unsafe.IORuntime.global
+
+      req
+        .as[BestReviewRequest]
+        .attempt
+        .map {
+          case Left(thr) => BadRequest(thr.getMessage)
+          case Right(bestReviewReq) =>
+            Ok(bestReviewReq.minReviews.asJson)
+        }
+        .unsafeRunSync()
+
+//      (for {
+//        reviews <- ReviewService
+//          .getBestReviews(
+//            1262304000,
+//            1609372800,
+//            2,
+//            2
+//          )
+//      } yield Ok(reviews.asJson)).unsafeRunSync()(runtime)
   }
 }
