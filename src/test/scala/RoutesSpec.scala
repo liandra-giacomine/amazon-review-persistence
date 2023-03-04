@@ -1,31 +1,79 @@
 package amazonreviewpersistance
 
 import cats.effect.IO
-import models.Review
+import io.circe.Json
+import models.responses.ReviewRating
 import org.http4s._
 import org.http4s.implicits._
 import munit.CatsEffectSuite
+import org.http4s.circe.{jsonEncoderOf, jsonOf}
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.when
+import org.mongodb.scala.Document
+import org.scalatestplus.mockito.MockitoSugar.mock
+import services.{ReviewRepository, ReviewService}
 
 class RoutesSpec extends CatsEffectSuite {
 
-  test("GET /amazon/best-review returns status code 200") {
+  val mockRepository = mock[ReviewRepository]
+  val reviewService  = new ReviewService(mockRepository)
+
+  val routes = new Routes(reviewService)
+
+  implicit val encoderReviewRating: EntityEncoder[IO, Seq[ReviewRating]] =
+    jsonEncoderOf[IO, Seq[ReviewRating]]
+
+  implicit val decoder: EntityDecoder[IO, Seq[ReviewRating]] =
+    jsonOf[IO, Seq[ReviewRating]]
+
+  val json = Json
+    .fromFields(
+      List(
+        ("start", Json.fromString("01.01.2010")),
+        ("end", Json.fromString("01.01.2020")),
+        ("limit", Json.fromInt(1)),
+        ("min", Json.fromInt(1))
+      )
+    )
+    .toString
+
+  private[this] val getBestReview: IO[Response[IO]] =
+    routes.reviewRoutes.orNotFound
+      .run(
+        Request(
+          method = Method.POST,
+          uri = uri"/reviews/best"
+        ).withEntity(json)
+      )
+
+  test(
+    "POST /reviews/best returns status code Ok given a successful response from the repository"
+  ) {
+    when(mockRepository.getBestReviews(any(), any()))
+      .thenReturn(IO(Seq.empty[Document]))
+
     assertIO(getBestReview.map(_.status), Status.Ok)
   }
 
   test(
-    "GET /amazon/best-review returns array of asin and average_rating objects"
+    "POST /reviews/best returns status code a sequence of ReviewRating given a successful response from the repository"
   ) {
+    when(mockRepository.getBestReviews(any(), any()))
+      .thenReturn(IO(Seq.empty[Document]))
+
     assertIO(
-      getBestReview.flatMap(_.as[String]),
-      "[{\"asin\":\"B000JQ0JNS\",\"average_rating\":4.5},{\"asin\":\"B000NI7RW8\",\"average_rating\":3.666666666666666666666666666666667}]"
+      getBestReview.flatMap(r => r.as[Seq[ReviewRating]]),
+      Seq.empty[ReviewRating]
     )
   }
 
-  private[this] val getBestReview: IO[Response[IO]] =
-    Routes
-      .reviewRoutes[IO]
-      .orNotFound
-      .run(
-        Request(method = Method.GET, uri = uri"/amazon/best-review")
-      )
+  test(
+    "POST /reviews/best returns InternalServerError when an exception is thrown in the repository"
+  ) {
+    when(mockRepository.getBestReviews(any(), any()))
+      .thenReturn(IO(throw new Exception("test")))
+
+    assertIO(getBestReview.map(_.status), Status.InternalServerError)
+  }
+
 }

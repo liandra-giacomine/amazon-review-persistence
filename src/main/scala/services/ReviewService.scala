@@ -11,7 +11,7 @@ import org.mongodb.scala.bson.collection.immutable.Document
 
 import scala.annotation.tailrec
 
-object ReviewService {
+class ReviewService(reviewRepository: ReviewRepository) {
 
   implicit val runtime = cats.effect.unsafe.IORuntime.global
 
@@ -34,7 +34,7 @@ object ReviewService {
   private val writeToDatabaseSink: Pipe[IO, List[ReviewDocument], Unit] = src =>
     src
       .evalMap { reviewList =>
-        ReviewsRepository.insertReview(reviewList)
+        reviewRepository.insertReview(reviewList)
       }
 
   @tailrec
@@ -68,14 +68,14 @@ object ReviewService {
     val path    = java.nio.file.Paths.get(filepath)
     val fs2Path = Path.fromNioPath(path)
     val size    = java.nio.file.Files.size(path)
-    IO(insertReviewsFromFileRange(0, size, fs2Path))
+    insertReviewsFromFileRange(0, size, fs2Path)
   }
 
-  def getBestReviews(
+  def findBestReviews(
       bestReviewRequest: BestReviewRequest
   ): Either[Throwable, Seq[ReviewRating]] = {
     (for {
-      reviews <- ReviewsRepository
+      reviews <- reviewRepository
         .getBestReviews(
           bestReviewRequest.start,
           bestReviewRequest.end

@@ -9,7 +9,7 @@ import org.http4s.circe._
 import models.requests.BestReviewRequest
 import services.ReviewService
 
-object Routes {
+class Routes(reviewService: ReviewService) {
 
   implicit val decoder: EntityDecoder[IO, BestReviewRequest] =
     jsonOf[IO, BestReviewRequest]
@@ -25,8 +25,7 @@ object Routes {
         .map {
           case Left(thr) => BadRequest(thr.getMessage)
           case Right(bestReviewReq) =>
-            ReviewService
-              .getBestReviews(bestReviewReq) match {
+            reviewService.findBestReviews(bestReviewReq) match {
               case Left(e)  => InternalServerError()
               case Right(b) => Ok(b.asJson)
             }

@@ -24,7 +24,10 @@ lazy val root = (project in file("."))
       "org.mongodb.scala" %% "mongo-scala-driver"  % "4.8.0",
       "org.scalameta"     %% "munit"               % MunitVersion % Test,
       "org.typelevel" %% "munit-cats-effect-3" % MunitCatsEffectVersion % Test,
-      "ch.qos.logback" % "logback-classic"     % LogbackVersion
+      "ch.qos.logback" % "logback-classic"     % LogbackVersion,
+      "org.scalactic" %% "scalactic"           % "3.2.15",
+      "org.scalatest" %% "scalatest"           % "3.2.15"               % Test,
+      "org.scalatestplus" %% "mockito-4-6" % "3.2.15.0" % Test
     ),
     testFrameworks += new TestFramework("munit.Framework")
   )
@@ -32,8 +35,7 @@ lazy val root = (project in file("."))
 lazy val buildSettings = Def.settings(scalafmtOnCompile := true)
 
 lazy val scalacSettings = Def.settings(
-  scalacOptions ~= {
-    opts =>
-      opts.filterNot(Set("-Xfatal-warnings"))
+  scalacOptions ~= { opts =>
+    opts.filterNot(Set("-Xfatal-warnings"))
   }
 )
