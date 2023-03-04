@@ -1,11 +1,12 @@
-package amazonreviewpersistance
+package services
 
+import cats.effect.IO
 import fs2.io.file.{Files, Path}
 import fs2.{Pipe, Stream, text}
-import cats.effect.IO
 import io.circe.parser._
 import models.requests.BestReviewRequest
-import models.{ProductRatings, Review, ReviewDocument, ReviewRating}
+import models.responses.ReviewRating
+import models.{ProductRatings, Review, ReviewDocument}
 import org.mongodb.scala.bson.collection.immutable.Document
 
 import scala.annotation.tailrec
@@ -33,7 +34,7 @@ object ReviewService {
   private val writeToDatabaseSink: Pipe[IO, List[ReviewDocument], Unit] = src =>
     src
       .evalMap { reviewList =>
-        PersistenceService.insertReview(reviewList)
+        ReviewsRepository.insertReview(reviewList)
       }
 
   @tailrec
@@ -74,7 +75,7 @@ object ReviewService {
       bestReviewRequest: BestReviewRequest
   ): Either[Throwable, Seq[ReviewRating]] = {
     (for {
-      reviews <- PersistenceService
+      reviews <- ReviewsRepository
         .getBestReviews(
           bestReviewRequest.start,
           bestReviewRequest.end

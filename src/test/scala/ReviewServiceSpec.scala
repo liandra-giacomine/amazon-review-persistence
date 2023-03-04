@@ -1,8 +1,9 @@
 package amazonreviewpersistance
 
 import models.Review
-import models.ReviewRating
+import models.responses.ReviewRating
 import munit.CatsEffectSuite
+import services.ReviewService
 
 import java.nio.file.Paths
 

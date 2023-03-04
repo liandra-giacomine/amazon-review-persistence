@@ -1,7 +1,7 @@
 package models
 
 import io.circe.generic.semiauto.deriveDecoder
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.Decoder
 
 case class ProductRatings(_id: String, overallList: List[Double])
 

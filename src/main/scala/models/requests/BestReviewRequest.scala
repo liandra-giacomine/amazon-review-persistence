@@ -1,6 +1,5 @@
 package models.requests
 
-import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder, HCursor, Json}
 
 case class BestReviewRequest(

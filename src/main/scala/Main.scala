@@ -1,16 +1,14 @@
 package amazonreviewpersistance
 
-import cats.effect.unsafe.IORuntime
-import cats.effect.{IO, IOApp}
-import fs2.io.file.Path
+import cats.effect.IOApp
+import services.{ReviewService, ReviewsRepository}
 
 object Main extends IOApp.Simple {
 
   // TODO: Use secure data exchange (because there are peoples names in the data etc) https: //http4s.org/v0.23/docs/hsts.html
 
-  PersistenceService
+  ReviewsRepository
     .cleanCollection()
-    .unsafeRunSync()(cats.effect.unsafe.IORuntime.global)
 
   (ReviewFile.inputValue match {
     case Some(f) =>

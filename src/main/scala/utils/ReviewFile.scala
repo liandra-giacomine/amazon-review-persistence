@@ -1,9 +1,5 @@
-package amazonreviewpersistance
-
-import fs2.io.file.Path
+package utils
 
 object ReviewFile {
-
   lazy val inputValue = sys.props.get("filepath")
-
 }

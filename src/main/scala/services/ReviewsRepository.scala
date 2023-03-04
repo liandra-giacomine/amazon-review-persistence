@@ -1,22 +1,19 @@
-package amazonreviewpersistance
+package services
 
 import cats.effect.IO
-import models.{ReviewDocument}
+import models.ReviewDocument
+import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
+import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
+import org.mongodb.scala.bson.codecs.Macros._
+import org.mongodb.scala.model.Accumulators
+import org.mongodb.scala.model.Aggregates.{filter, group}
+import org.mongodb.scala.model.Filters.{gte, lte}
 import org.mongodb.scala.{Document, MongoClient, MongoCollection, MongoDatabase}
 
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
-import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
-import org.bson.codecs.configuration.CodecRegistries.{
-  fromRegistries,
-  fromProviders
-}
-import org.mongodb.scala.model.Accumulators
-import org.mongodb.scala.model.Aggregates.{filter, group}
-import org.mongodb.scala.model.Filters.{gte, lte}
-import org.mongodb.scala.bson.codecs.Macros._
 
-object PersistenceService {
+object ReviewsRepository {
 
   implicit val ec: ExecutionContext =
     ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
@@ -35,9 +32,8 @@ object PersistenceService {
   val collection: MongoCollection[ReviewDocument] =
     database.getCollection("reviews_collection")
 
-  def cleanCollection(): IO[Unit] =
-    IO.fromFuture(IO(collection.deleteMany(Document()).toFuture()))
-      .map(_ => ())
+  def cleanCollection() =
+    collection.deleteMany(Document())
 
   def insertReview(reviews: List[ReviewDocument]): IO[Unit] = {
     IO.fromFuture(
