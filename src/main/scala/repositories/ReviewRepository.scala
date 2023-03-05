@@ -35,8 +35,7 @@ class ReviewRepository(implicit val ec: ExecutionContext) {
     Indexes
       .compoundIndex(
         Indexes.ascending("asin"),
-        Indexes.ascending("unixReviewTime"),
-        Indexes.ascending("overall")
+        Indexes.ascending("unixReviewTime")
       )
   )
 
