@@ -9,16 +9,11 @@ import models.responses.ReviewRating
 import models.{ProductRatings, Review, ReviewDocument}
 import org.mongodb.scala.bson.collection.immutable.Document
 
-import java.nio.charset.Charset
 import scala.annotation.tailrec
 
 class ReviewService(reviewRepository: ReviewRepository) {
 
   implicit val runtime = cats.effect.unsafe.IORuntime.global
-
-  private val utf8Charset = Charset.forName("UTF-8")
-
-  private val line = System.getProperty("line.separator")
 
   private val convertToReviewObjPipe: Pipe[IO, Byte, ReviewDocument] = src =>
     src
@@ -48,7 +43,7 @@ class ReviewService(reviewRepository: ReviewRepository) {
       end: Long,
       fs2Path: Path,
       fileSize: Long,
-      chunkSize: Int = 1024 * 2
+      chunkSize: Int = 1024 * 1000
   ): Unit = {
     def findNewLineByte(fromByte: Long) = {
       Files[IO]
@@ -61,7 +56,9 @@ class ReviewService(reviewRepository: ReviewRepository) {
 
     if (start >= fileSize) ()
     else {
-      val newEnd = findNewLineByte(end + chunkSize).unsafeRunSync()
+      val newEnd =
+        if (end >= fileSize) fileSize
+        else findNewLineByte(end + chunkSize).unsafeRunSync()
 
       val source =
         Files[IO].readRange(fs2Path, chunkSize, start, newEnd)
@@ -83,16 +80,16 @@ class ReviewService(reviewRepository: ReviewRepository) {
     }
   }
 
+  private def sumAsBigDecimal(overallList: List[Double]): BigDecimal = {
+    val bigDecimalList = overallList.map(o => BigDecimal(o))
+    bigDecimalList.sum / bigDecimalList.length
+  }
+
   private def convertDocumentToReviewRating(
       documents: Seq[Document],
       minReviews: Int,
       limit: Int
   ): IO[Seq[ReviewRating]] = {
-    def sumAsBigDecimal(overallList: List[Double]): BigDecimal = {
-      val bigDecimalList = overallList.map(o => BigDecimal(o))
-      bigDecimalList.sum / bigDecimalList.length
-    }
-
     IO {
       documents
         .map(d => decode[ProductRatings](d.toJson()))
@@ -112,7 +109,7 @@ class ReviewService(reviewRepository: ReviewRepository) {
     val path      = java.nio.file.Paths.get(filepath)
     val fs2Path   = Path.fromNioPath(path)
     val size      = java.nio.file.Files.size(path)
-    val chunkSize = 1024 * 64
+    val chunkSize = 1024 * 1000
     IO(
       insertReviewsFromFileRange(0, chunkSize, fs2Path, size, chunkSize)
     ).attempt

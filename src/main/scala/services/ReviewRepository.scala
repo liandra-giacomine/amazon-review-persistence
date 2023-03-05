@@ -43,6 +43,7 @@ class ReviewRepository {
           .toFuture()
       )
     ).map(_ => ())
+      .attempt
 
   def insertReview(reviews: List[ReviewDocument]): IO[Unit] = {
     IO.fromFuture(

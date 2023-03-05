@@ -26,7 +26,7 @@ class Routes(reviewService: ReviewService) {
           case Left(thr) => BadRequest(thr.getMessage)
           case Right(bestReviewReq) =>
             reviewService.findBestReviews(bestReviewReq) match {
-              case Left(e)  => InternalServerError()
+              case Left(_)  => InternalServerError()
               case Right(b) => Ok(b.asJson)
             }
         }
