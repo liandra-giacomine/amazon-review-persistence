@@ -8,9 +8,9 @@ import org.bson.codecs.configuration.CodecRegistries.{
 }
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.bson.codecs.Macros._
-import org.mongodb.scala.model.Accumulators
+import org.mongodb.scala.model.{Accumulators, Indexes}
 import org.mongodb.scala.model.Aggregates.{filter, group}
-import org.mongodb.scala.model.Filters.{gte, lte}
+import org.mongodb.scala.model.Filters.{exists, gte, lte}
 import org.mongodb.scala.{Document, MongoClient, MongoCollection, MongoDatabase}
 
 import scala.concurrent.ExecutionContext
@@ -31,6 +31,15 @@ class ReviewRepository(implicit val ec: ExecutionContext) {
   val collection: MongoCollection[ReviewDocument] =
     database.getCollection("reviews_collection")
 
+  collection.createIndex(
+    Indexes
+      .compoundIndex(
+        Indexes.ascending("asin"),
+        Indexes.ascending("unixReviewTime"),
+        Indexes.ascending("overall")
+      )
+  )
+
   def cleanCollection() =
     IO.fromFuture(
       IO(
@@ -40,7 +49,7 @@ class ReviewRepository(implicit val ec: ExecutionContext) {
       )
     ).map(_ => ())
 
-  def insertReview(reviews: List[ReviewDocument]) = {
+  def insertReview(reviews: Vector[ReviewDocument]) = {
     IO.fromFuture(
       IO(
         collection
@@ -52,8 +61,11 @@ class ReviewRepository(implicit val ec: ExecutionContext) {
 
   def getGroupedReviewRatings(
       startTime: Long,
-      endTime: Long
+      endTime: Long,
+      minReviews: Int
   ) = {
+    println(startTime)
+    println(endTime)
     IO.fromFuture(
       IO(
         collection
@@ -64,13 +76,15 @@ class ReviewRepository(implicit val ec: ExecutionContext) {
               group(
                 "$asin",
                 Accumulators.push("overallList", "$overall")
-              )
+              ),
+              filter(exists(s"overallList.${minReviews - 1}"))
             )
           )
           .toFuture()
+          .map(_.toVector)
           .recover { case e =>
             println("Mongo Error: " + e.getMessage)
-            Seq.empty[Document]
+            Vector.empty[Document]
           }
       )
     )

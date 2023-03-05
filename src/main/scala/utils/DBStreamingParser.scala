@@ -25,16 +25,17 @@ class DBStreamingParser(reviewRepository: ReviewRepository)(implicit
       .evalMap(reviewOpt => IO(ReviewDocument(reviewOpt.get)))
 
   private val combineReviewInListPipe
-      : Pipe[IO, ReviewDocument, List[ReviewDocument]] = src =>
+      : Pipe[IO, ReviewDocument, Vector[ReviewDocument]] = src =>
     Stream.eval(
-      src.compile.toList
+      src.compile.toVector
     )
 
-  private val writeToDatabaseSink: Pipe[IO, List[ReviewDocument], Unit] = src =>
-    src
-      .evalMap { reviewList =>
-        reviewRepository.insertReview(reviewList)
-      }
+  private val writeToDatabaseSink: Pipe[IO, Vector[ReviewDocument], Unit] =
+    src =>
+      src
+        .evalMap { reviewList =>
+          reviewRepository.insertReview(reviewList)
+        }
 
   @tailrec
   private def insertReviewsFromFileRange(
@@ -85,7 +86,7 @@ class DBStreamingParser(reviewRepository: ReviewRepository)(implicit
       val fs2Path   = Path.fromNioPath(path)
       val size      = java.nio.file.Files.size(path)
       val chunkSize = 1024 * 1000
-      insertReviewsFromFileRange(0, chunkSize, fs2Path, size, chunkSize)
+      insertReviewsFromFileRange(0, chunkSize: Long, fs2Path, size, chunkSize)
     }.attempt
   }
 

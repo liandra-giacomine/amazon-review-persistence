@@ -13,26 +13,25 @@ class ReviewService(reviewRepository: ReviewRepository)(implicit
     val runtime: IORuntime
 ) {
 
-  private def averageAsBigDecimal(overallList: List[Double]): BigDecimal = {
-    val bigDecimalList = overallList.map(o => BigDecimal(o))
-    bigDecimalList.sum / bigDecimalList.length
+  private def deriveProductAverageRating(
+      reviewRatings: ReviewRatings
+  ): ProductAverageRating = {
+    val bigDecimalList = reviewRatings.overallList.map(o => BigDecimal(o))
+    val averageRating  = bigDecimalList.sum / bigDecimalList.length
+    ProductAverageRating(
+      reviewRatings._id,
+      averageRating
+    )
   }
 
   private def calculateBestAverageRatings(
-      documents: Seq[Document],
-      minReviews: Int,
+      documents: Vector[Document],
       limit: Int
-  ): IO[Seq[ProductAverageRating]] = {
+  ): IO[Vector[ProductAverageRating]] = {
     IO {
       documents
-        .map(d => jawn.decode[ReviewRatings](d.toJson()))
-        .filter(p => p.toOption.get.overallList.length >= minReviews)
-        .map { case Right(p) =>
-          ProductAverageRating(
-            p._id,
-            averageAsBigDecimal(p.overallList)
-          )
-        }
+        .map(d => jawn.decode[ReviewRatings](d.toJson()).toOption.get)
+        .map(deriveProductAverageRating)
         .sortBy(r => r.averageRating)(Ordering.BigDecimal.reverse)
         .take(limit)
     }
@@ -40,16 +39,16 @@ class ReviewService(reviewRepository: ReviewRepository)(implicit
 
   def findBestReviews(
       bestReviewRequest: BestReviewRequest
-  ): Either[Throwable, Seq[ProductAverageRating]] = {
+  ): Either[Throwable, Vector[ProductAverageRating]] = {
     (for {
       asinAndOverallList <- reviewRepository
         .getGroupedReviewRatings(
           bestReviewRequest.start,
-          bestReviewRequest.end
+          bestReviewRequest.end,
+          bestReviewRequest.min
         )
       productRatings <- calculateBestAverageRatings(
         asinAndOverallList,
-        bestReviewRequest.min,
         bestReviewRequest.limit
       )
     } yield productRatings).attempt.unsafeRunSync()
