@@ -1,12 +1,11 @@
-package amazonreviewpersistance
-
+import amazonreviewpersistance.Routes
 import cats.effect.IO
 import io.circe.Json
 import models.responses.ProductAverageRating
-import org.http4s._
-import org.http4s.implicits._
 import munit.CatsEffectSuite
+import org.http4s._
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
+import org.http4s.implicits._
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.mongodb.scala.Document
