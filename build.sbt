@@ -1,13 +1,9 @@
-val Http4sVersion          = "0.23.6"
-val MunitVersion           = "0.7.29"
-val LogbackVersion         = "1.2.6"
-val MunitCatsEffectVersion = "1.0.6"
-val CirceVersion           = "0.14.3"
-
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val root = (project in file("."))
   .settings(inThisBuild(buildSettings))
+  .configs(IntegrationTest)
+  .settings(Defaults.itSettings)
   .settings(scalacSettings)
   .settings(
     organization := "com.example",
