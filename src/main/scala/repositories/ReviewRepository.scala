@@ -1,4 +1,4 @@
-package services
+package repositories
 
 import cats.effect.IO
 import models.ReviewDocument
@@ -13,22 +13,18 @@ import org.mongodb.scala.model.Aggregates.{filter, group}
 import org.mongodb.scala.model.Filters.{gte, lte}
 import org.mongodb.scala.{Document, MongoClient, MongoCollection, MongoDatabase}
 
-import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 
-class ReviewRepository {
+class ReviewRepository(implicit val ec: ExecutionContext) {
 
-  implicit val ec: ExecutionContext =
-    ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
-
-  lazy val codecRegistry = fromRegistries(
+  private lazy val codecRegistry = fromRegistries(
     fromProviders(classOf[ReviewDocument]),
     DEFAULT_CODEC_REGISTRY
   )
 
-  val mongoClient = MongoClient()
+  private val mongoClient = MongoClient()
 
-  val database: MongoDatabase = mongoClient
+  private val database: MongoDatabase = mongoClient
     .getDatabase("amazon_reviews_db")
     .withCodecRegistry(codecRegistry)
 
@@ -43,19 +39,18 @@ class ReviewRepository {
           .toFuture()
       )
     ).map(_ => ())
-      .attempt
 
-  def insertReview(reviews: List[ReviewDocument]): IO[Unit] = {
+  def insertReview(reviews: List[ReviewDocument]) = {
     IO.fromFuture(
       IO(
         collection
           .insertMany(reviews)
           .toFuture()
       )
-    ).map(_ => ())
-  }
+    )
+  }.map(_ => ())
 
-  def getBestReviews(
+  def getGroupedReviewRatings(
       startTime: Long,
       endTime: Long
   ) = {

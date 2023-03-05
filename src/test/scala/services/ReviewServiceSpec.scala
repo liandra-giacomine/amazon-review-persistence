@@ -1,15 +1,16 @@
-package amazonreviewpersistance
+package services
 
 import cats.effect.IO
 import models.requests.BestReviewRequest
-import models.responses.ReviewRating
+import models.responses.ProductAverageRating
 import munit.CatsEffectSuite
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.mongodb.scala.Document
 import org.scalatest.matchers.must.Matchers.{a, convertToAnyMustWrapper}
 import org.scalatestplus.mockito.MockitoSugar.mock
-import services.{ReviewRepository, ReviewService}
+import repositories.ReviewRepository
+import services.ReviewService
 
 class ReviewServiceSpec extends CatsEffectSuite {
 
@@ -21,18 +22,18 @@ class ReviewServiceSpec extends CatsEffectSuite {
   test(
     "Returns a sequence of ReviewRating from the sequence of documents returned by the repository"
   ) {
-    when(mockRepository.getBestReviews(any(), any()))
+    when(mockRepository.getGroupedReviewRatings(any(), any()))
       .thenReturn(IO(Seq.empty[Document]))
 
     val either = reviewService.findBestReviews(bestReviewRequest)
 
-    either mustBe Right(Seq.empty[ReviewRating])
+    either mustBe Right(Seq.empty[ProductAverageRating])
   }
 
   test(
     "When an exception is thrown by the repository, the ReviewService returns it in a Left"
   ) {
-    when(mockRepository.getBestReviews(any(), any()))
+    when(mockRepository.getGroupedReviewRatings(any(), any()))
       .thenReturn(IO(throw new Exception("test")))
 
     val either = reviewService.findBestReviews(bestReviewRequest)

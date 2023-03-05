@@ -1,6 +1,7 @@
 package amazonreviewpersistance
 
 import cats.effect.IO
+import cats.effect.unsafe.IORuntime
 import org.http4s.HttpRoutes
 import org.http4s._
 import org.http4s.dsl.io._
@@ -9,7 +10,12 @@ import org.http4s.circe._
 import models.requests.BestReviewRequest
 import services.ReviewService
 
-class Routes(reviewService: ReviewService) {
+import scala.concurrent.ExecutionContext
+
+class Routes(reviewService: ReviewService)(implicit
+    val ec: ExecutionContext,
+    runtime: IORuntime
+) {
 
   implicit val decoder: EntityDecoder[IO, BestReviewRequest] =
     jsonOf[IO, BestReviewRequest]
@@ -17,7 +23,6 @@ class Routes(reviewService: ReviewService) {
   val reviewRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case req @ POST -> Root / "reviews" / "best" =>
       import org.http4s.dsl.io._
-      implicit val runtime = cats.effect.unsafe.IORuntime.global
 
       req
         .as[BestReviewRequest]
