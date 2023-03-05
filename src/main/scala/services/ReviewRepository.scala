@@ -36,7 +36,13 @@ class ReviewRepository {
     database.getCollection("reviews_collection")
 
   def cleanCollection() =
-    collection.deleteMany(Document())
+    IO.fromFuture(
+      IO(
+        collection
+          .deleteMany(Document())
+          .toFuture()
+      )
+    ).map(_ => ())
 
   def insertReview(reviews: List[ReviewDocument]): IO[Unit] = {
     IO.fromFuture(

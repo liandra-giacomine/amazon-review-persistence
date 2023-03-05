@@ -12,10 +12,11 @@ object Server {
 
   val reviewService = new ReviewService(repository)
 
-  val setUp = IO {
-    repository
-      .cleanCollection()
+  implicit val runtime = cats.effect.unsafe.IORuntime.global
 
+  val cleanUpDB = repository.cleanCollection()
+
+  val loadData =
     ReviewFile.inputValue match {
       case Some(f) =>
         reviewService.insertReviewsFromFile(f)
@@ -23,7 +24,6 @@ object Server {
         reviewService
           .insertReviewsFromFile("src/main/scala/resources/reviews.json")
     }
-  }
 
   private val routes = new Routes(reviewService)
 

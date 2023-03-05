@@ -9,11 +9,16 @@ import models.responses.ReviewRating
 import models.{ProductRatings, Review, ReviewDocument}
 import org.mongodb.scala.bson.collection.immutable.Document
 
+import java.nio.charset.Charset
 import scala.annotation.tailrec
 
 class ReviewService(reviewRepository: ReviewRepository) {
 
   implicit val runtime = cats.effect.unsafe.IORuntime.global
+
+  private val utf8Charset = Charset.forName("UTF-8")
+
+  private val line = System.getProperty("line.separator")
 
   private val convertToReviewObjPipe: Pipe[IO, Byte, ReviewDocument] = src =>
     src
@@ -40,15 +45,26 @@ class ReviewService(reviewRepository: ReviewRepository) {
   @tailrec
   private def insertReviewsFromFileRange(
       start: Long,
-      remainingBytes: Long,
+      end: Long,
       fs2Path: Path,
-      chunkSize: Int = 1000 * 1024
+      fileSize: Long,
+      chunkSize: Int = 1024 * 2
   ): Unit = {
-    if (remainingBytes <= 0) ()
-    else {
+    def findNewLineByte(fromByte: Long) = {
+      Files[IO]
+        .readRange(fs2Path, chunkSize, fromByte, fromByte + chunkSize)
+        .takeThrough(x => x != '\n' && x != '\r')
+        .compile
+        .count
+        .map(c => c + fromByte)
+    }
 
-      val end    = start + chunkSize
-      val source = Files[IO].readRange(fs2Path, chunkSize, start, end)
+    if (start >= fileSize) ()
+    else {
+      val newEnd = findNewLineByte(end + chunkSize).unsafeRunSync()
+
+      val source =
+        Files[IO].readRange(fs2Path, chunkSize, start, newEnd)
 
       source
         .through(convertToReviewObjPipe)
@@ -58,34 +74,13 @@ class ReviewService(reviewRepository: ReviewRepository) {
         .drain
         .unsafeRunSync()
 
-      val remaining = remainingBytes - chunkSize
-
-      insertReviewsFromFileRange(end, remaining, fs2Path)
-    }
-  }
-
-  def insertReviewsFromFile(filepath: String) = {
-    val path    = java.nio.file.Paths.get(filepath)
-    val fs2Path = Path.fromNioPath(path)
-    val size    = java.nio.file.Files.size(path)
-    insertReviewsFromFileRange(0, size, fs2Path)
-  }
-
-  def findBestReviews(
-      bestReviewRequest: BestReviewRequest
-  ): Either[Throwable, Seq[ReviewRating]] = {
-    (for {
-      reviews <- reviewRepository
-        .getBestReviews(
-          bestReviewRequest.start,
-          bestReviewRequest.end
-        )
-      reviewRatings <- convertDocumentToReviewRating(
-        reviews,
-        bestReviewRequest.min,
-        bestReviewRequest.limit
+      insertReviewsFromFileRange(
+        newEnd,
+        newEnd + chunkSize,
+        fs2Path,
+        fileSize
       )
-    } yield reviewRatings).attempt.unsafeRunSync()
+    }
   }
 
   private def convertDocumentToReviewRating(
@@ -111,6 +106,33 @@ class ReviewService(reviewRepository: ReviewRepository) {
         .sortBy(r => r.averageRating)(Ordering.BigDecimal.reverse)
         .take(limit)
     }
+  }
+
+  def insertReviewsFromFile(filepath: String): IO[Either[Throwable, Unit]] = {
+    val path      = java.nio.file.Paths.get(filepath)
+    val fs2Path   = Path.fromNioPath(path)
+    val size      = java.nio.file.Files.size(path)
+    val chunkSize = 1024 * 64
+    IO(
+      insertReviewsFromFileRange(0, chunkSize, fs2Path, size, chunkSize)
+    ).attempt
+  }
+
+  def findBestReviews(
+      bestReviewRequest: BestReviewRequest
+  ): Either[Throwable, Seq[ReviewRating]] = {
+    (for {
+      reviews <- reviewRepository
+        .getBestReviews(
+          bestReviewRequest.start,
+          bestReviewRequest.end
+        )
+      reviewRatings <- convertDocumentToReviewRating(
+        reviews,
+        bestReviewRequest.min,
+        bestReviewRequest.limit
+      )
+    } yield reviewRatings).attempt.unsafeRunSync()
   }
 
 }
