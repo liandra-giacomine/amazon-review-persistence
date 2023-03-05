@@ -8,8 +8,7 @@ import java.nio.file.Paths
 
 class ReviewRepositorySpec extends CatsEffectSuite {
 
-  val bestReviewRequest = BestReviewRequest(1000000000, 1000000000, 1, 1)
-
+  
   test(
     "Returns a sequence of ReviewRating from the sequence of documents returned by the repository"
   ) {
