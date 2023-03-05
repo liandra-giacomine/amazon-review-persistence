@@ -22,8 +22,8 @@ class ReviewServiceSpec extends CatsEffectSuite {
   test(
     "Returns a sequence of ReviewRating from the sequence of documents returned by the repository"
   ) {
-    when(mockRepository.getGroupedReviewRatings(any(), any()))
-      .thenReturn(IO(Seq.empty[Document]))
+    when(mockRepository.getGroupedReviewRatings(any(), any(), any()))
+      .thenReturn(IO(Vector.empty[Document]))
 
     val either = reviewService.findBestReviews(bestReviewRequest)
 
@@ -33,7 +33,7 @@ class ReviewServiceSpec extends CatsEffectSuite {
   test(
     "When an exception is thrown by the repository, the ReviewService returns it in a Left"
   ) {
-    when(mockRepository.getGroupedReviewRatings(any(), any()))
+    when(mockRepository.getGroupedReviewRatings(any(), any(), any()))
       .thenReturn(IO(throw new Exception("test")))
 
     val either = reviewService.findBestReviews(bestReviewRequest)

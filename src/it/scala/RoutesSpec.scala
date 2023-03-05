@@ -52,8 +52,8 @@ class RoutesSpec extends CatsEffectSuite {
   test(
     "POST /reviews/best returns status code Ok given a successful response from the repository"
   ) {
-    when(mockRepository.getGroupedReviewRatings(any(), any()))
-      .thenReturn(IO(Seq.empty[Document]))
+    when(mockRepository.getGroupedReviewRatings(any(), any(), any()))
+      .thenReturn(IO(Vector.empty[Document]))
 
     assertIO(validPayloadRequest.map(_.status), Status.Ok)
   }
@@ -61,12 +61,12 @@ class RoutesSpec extends CatsEffectSuite {
   test(
     "POST /reviews/best returns status code a sequence of ReviewRating given a successful response from the repository"
   ) {
-    when(mockRepository.getGroupedReviewRatings(any(), any()))
-      .thenReturn(IO(Seq.empty[Document]))
+    when(mockRepository.getGroupedReviewRatings(any(), any(), any()))
+      .thenReturn(IO(Vector.empty[Document]))
 
     assertIO(
       validPayloadRequest.flatMap(r => r.as[Seq[ProductAverageRating]]),
-      Seq.empty[ProductAverageRating]
+      Vector.empty[ProductAverageRating]
     )
   }
 
@@ -88,7 +88,7 @@ class RoutesSpec extends CatsEffectSuite {
   test(
     "POST /reviews/best returns InternalServerError when an exception is thrown in the repository"
   ) {
-    when(mockRepository.getGroupedReviewRatings(any(), any()))
+    when(mockRepository.getGroupedReviewRatings(any(), any(), any()))
       .thenReturn(IO(throw new Exception("test")))
 
     assertIO(validPayloadRequest.map(_.status), Status.InternalServerError)

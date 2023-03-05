@@ -60,7 +60,7 @@ class ReviewRepositorySpec extends CatsEffectSuite {
     )
 
     reviewRepository
-      .insertReview(List(reviewDocument1, reviewDocument2))
+      .insertReview(Vector(reviewDocument1, reviewDocument2))
       .unsafeRunSync()
 
     assertIO(
@@ -97,7 +97,7 @@ class ReviewRepositorySpec extends CatsEffectSuite {
     "Collection groups reviews by asin and combines their rating for a given start and end timestamp"
   ) {
     val document = reviewRepository
-      .getGroupedReviewRatings(123456789, 200000000)
+      .getGroupedReviewRatings(123456789, 200000000, 1)
       .unsafeRunSync()
 
     document.length mustBe 1
