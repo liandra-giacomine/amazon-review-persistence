@@ -26,7 +26,7 @@ class RoutesSpec extends CatsEffectSuite {
   implicit val decoder: EntityDecoder[IO, Seq[ReviewRating]] =
     jsonOf[IO, Seq[ReviewRating]]
 
-  val json = Json
+  val validPayload = Json
     .fromFields(
       List(
         ("start", Json.fromString("01.01.2010")),
@@ -37,14 +37,16 @@ class RoutesSpec extends CatsEffectSuite {
     )
     .toString
 
-  private[this] val getBestReview: IO[Response[IO]] =
+  private def getBestReview(payload: String): IO[Response[IO]] =
     routes.reviewRoutes.orNotFound
       .run(
         Request(
           method = Method.POST,
           uri = uri"/reviews/best"
-        ).withEntity(json)
+        ).withEntity(payload)
       )
+
+  val validPayloadRequest = getBestReview(validPayload)
 
   test(
     "POST /reviews/best returns status code Ok given a successful response from the repository"
@@ -52,7 +54,7 @@ class RoutesSpec extends CatsEffectSuite {
     when(mockRepository.getBestReviews(any(), any()))
       .thenReturn(IO(Seq.empty[Document]))
 
-    assertIO(getBestReview.map(_.status), Status.Ok)
+    assertIO(validPayloadRequest.map(_.status), Status.Ok)
   }
 
   test(
@@ -62,8 +64,23 @@ class RoutesSpec extends CatsEffectSuite {
       .thenReturn(IO(Seq.empty[Document]))
 
     assertIO(
-      getBestReview.flatMap(r => r.as[Seq[ReviewRating]]),
+      validPayloadRequest.flatMap(r => r.as[Seq[ReviewRating]]),
       Seq.empty[ReviewRating]
+    )
+  }
+
+  test(
+    "POST /reviews/best returns BadRequest when an exception is thrown in the repository"
+  ) {
+    val invalidJsonRequest = getBestReview("Invalid json")
+    assertIO(
+      invalidJsonRequest.map(_.status),
+      Status.BadRequest
+    )
+
+    assertIO(
+      invalidJsonRequest.flatMap(_.as[String]),
+      "Malformed message body: Invalid JSON"
     )
   }
 
@@ -73,7 +90,7 @@ class RoutesSpec extends CatsEffectSuite {
     when(mockRepository.getBestReviews(any(), any()))
       .thenReturn(IO(throw new Exception("test")))
 
-    assertIO(getBestReview.map(_.status), Status.InternalServerError)
+    assertIO(validPayloadRequest.map(_.status), Status.InternalServerError)
   }
 
 }
