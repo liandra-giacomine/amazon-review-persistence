@@ -63,8 +63,6 @@ class ReviewRepository(implicit val ec: ExecutionContext) {
       endTime: Long,
       minReviews: Int
   ) = {
-    println(startTime)
-    println(endTime)
     IO.fromFuture(
       IO(
         collection
@@ -82,7 +80,6 @@ class ReviewRepository(implicit val ec: ExecutionContext) {
           .toFuture()
           .map(_.toVector)
           .recover { case e =>
-            println("Mongo Error: " + e.getMessage)
             Vector.empty[Document]
           }
       )
